@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Facturas{% endblock %}
+{% block content %}
+    <h1>Mis Facturas</h1>
+    <form method="POST" action="{{ url_for('orders') }}">
+        <label for="product_id">Producto:</label>
+        <select id="product_id" name="product_id" required>
+            {% for product in products %}
+            <option value="{{ product.id }}">{{ product.name }} - ${{ "%.2f"|format(product.price) }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="quantity">Cantidad:</label>
+        <input type="number" id="quantity" name="quantity" required>
+
+        <button type="submit">Crear Factura</button>
+    </form>
+    <h2>Mis Facturas</h2>
+    <ul>
+        {% for order in orders %}
+        <li>Factura #{{ order.id }} - Total: ${{ "%.2f"|format(order.total) }} - Estado: {{ order.status }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1>Tu Carrito de Compras</h1>
+
+    {% if cart %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Precio Unitario</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>${{ "%.2f"|format(item.price) }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ "%.2f"|format(item.price * item.quantity) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total:</strong></td>
+                <td><strong>${{ "%.2f"|format(total) }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="cart-actions">
+        <form action="{{ url_for('create_order') }}" method="post" class="payment-form">
+            <button type="submit" class="btn btn-primary">Finalizar Compra (Tradicional)</button>
+        </form>
+
+        <form action="{{ url_for('create_mp_payment') }}" method="post" class="payment-form">
+            <button type="submit" class="btn btn-success">Pagar con Mercado Pago</button>
+        </form>
+
+        <a href="{{ url_for('products') }}" class="btn btn-secondary">Seguir Comprando</a>
+    </div>
+    {% else %}
+    <div class="empty-cart">
+        <p>Tu carrito está vacío.</p>
+        <a href="{{ url_for('products') }}" class="btn btn-secondary">Volver a Productos</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+
+    .cart-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .cart-table th, .cart-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .cart-table th {
+        background-color: #f2f2f2;
+    }
+
+    .cart-table tfoot td {
+        font-weight: bold;
+        background-color: #f9f9f9;
+    }
+
+    .cart-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
