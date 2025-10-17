@@ -3,11 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import os,email_validator 
 from config import Config
 import mercadopago
 from dotenv import load_dotenv
 from forms import LoginForm, RegisterForm
+from models import User, Product, Order
 
 # Cargar variables de entorno
 load_dotenv()

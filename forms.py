@@ -13,22 +13,4 @@ class LoginForm(FlaskForm):
     password = StringField("Contraseña", validators=[DataRequired()])
     submit = SubmitField("Ingresar")
 
-class ProductoForm(FlaskForm):
-    name = StringField("Nombre", validators=[DataRequired()])
-    price = FloatField("Precio", validators=[DataRequired()])
-    description = StringField("Descripción")
-    submit = SubmitField("Agregar Producto")
 
-class PedidoForm(FlaskForm):
-    producto_id = IntegerField("ID Producto", validators=[DataRequired()])
-    cantidad = IntegerField("Cantidad", validators=[DataRequired()])
-    submit = SubmitField("Crear Pedido")
-
-class PagoForm(FlaskForm):
-    metodo = SelectField("Método de Pago", choices=[
-        ("efectivo", "Efectivo"),
-        ("tarjeta", "Tarjeta"),
-        ("transferencia", "Transferencia")
-    ], validators=[DataRequired()])
-    monto = FloatField("Monto", validators=[DataRequired()])
-    submit = SubmitField("Confirmar Pago")
