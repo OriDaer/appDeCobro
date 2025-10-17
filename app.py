@@ -7,7 +7,6 @@ from config import Config
 import mercadopago
 from dotenv import load_dotenv
 from forms import LoginForm, RegisterForm
-from models import User, Product, Order
 
 # Cargar variables de entorno
 load_dotenv()

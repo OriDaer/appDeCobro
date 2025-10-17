@@ -9,10 +9,7 @@
             <option value="{{ product.id }}">{{ product.name }} - ${{ "%.2f"|format(product.price) }}</option>
             {% endfor %}
         </select>
-
-        <label for="quantity">Cantidad:</label>
-        <input type="number" id="quantity" name="quantity" required>
-
+        
         <button type="submit">Crear Factura</button>
     </form>
     <h2>Mis Facturas</h2>
