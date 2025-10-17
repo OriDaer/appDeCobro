@@ -3,21 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-
-import os
+import os,email_validator 
+from config import Config
 import mercadopago
 from dotenv import load_dotenv
+from forms import LoginForm, RegisterForm
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Configuración de Flask
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'tu_clave_secreta')
-
-# Configuración de la base de datos (SQLite)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mi_bd.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config.from_object(Config)
 
 # Inicializar SQLAlchemy y Flask-Login
 db = SQLAlchemy(app)
@@ -29,7 +25,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(1024))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -58,35 +54,31 @@ def load_user(user_id):
 @app.route('/')
 def index():
     return render_template('base.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
             login_user(user)
             return redirect(url_for('products'))
         flash('Usuario o contraseña incorrectos.')
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        if User.query.filter_by(username=username).first():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        if User.query.filter_by(username=form.username.data).first():
             flash('El usuario ya existe.')
             return redirect(url_for('register'))
-        new_user = User(username=username, email=email)
-        new_user.set_password(password)
+        new_user = User(username=form.username.data, email=form.email.data)
+        new_user.set_password(form.password.data)
         db.session.add(new_user)
         db.session.commit()
         flash('Registro exitoso. Inicia sesión.')
         return redirect(url_for('login'))
-    return render_template('register.html')
+    return render_template('register.html', form=form)
 
 @app.route('/products', methods=['GET', 'POST'])
 @login_required
@@ -157,7 +149,8 @@ def create_mp_payment():
         flash('Tu carrito está vacío.')
         return redirect(url_for('view_cart'))
 
-    sdk = mercadopago.SDK(os.getenv('token'))
+    sdk = mercadopago.SDK(str(app.config["MERCADOPAGO_ACCESS_TOKEN"]))
+
     items = []
     for item in cart:
         items.append({
@@ -173,14 +166,23 @@ def create_mp_payment():
             "failure": url_for('mp_failure', _external=True),
             "pending": url_for('mp_pending', _external=True),
         },
-        "auto_return": "approved",
+        #"auto_return": "approved",
     }
 
+    # Crear preferencia
     preference_response = sdk.preference().create(preference_data)
-    preference = preference_response["response"]
-    session['preference_id'] = preference['id']
-    return redirect(preference['init_point'])
+    print("DEBUG: preference_response:", preference_response)  # 🔹 VER qué devuelve
+    preference = preference_response.get("response", {})
 
+    # Revisar si hay 'id'
+    preference_id = preference.get('id')
+    if not preference_id:
+        flash("Hubo un problema creando la preferencia de pago. Revisa la consola.")
+        return redirect(url_for('view_cart'))
+
+    # Todo ok, guardamos en session
+    session['preference_id'] = preference_id
+    return redirect(preference.get('init_point', url_for('view_cart')))
 @app.route('/mp_success')
 @login_required
 def mp_success():
@@ -221,7 +223,16 @@ def logout():
 
 # --- CREAR TABLAS ---
 with app.app_context():
+    # Crear un contexto de conexión
+    with db.engine.connect() as conn:
+        conn.execute(
+            db.text("ALTER TABLE user MODIFY password_hash VARCHAR(1024)")
+        )
+        conn.commit()  # confirmar cambios
+
+    # Crear tablas si no existen
     db.create_all()
+
 
 if __name__ == '__main__':
     app.run(debug=True)
